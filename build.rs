@@ -206,7 +206,7 @@ mod {platform};
 #[cfg(platform = "{platform}")]
 pub use {platform}::PlatformImpl;
 "#,
-            path = path.display()
+            path = rust_source_path(&path)
         )
         .expect("writing to String should not fail");
     }
@@ -237,9 +237,18 @@ fn payload_source_code(payload: Option<&PayloadConfig>) -> String {
 static EMBEDDED_PAYLOAD: [u8; {size}] = *include_bytes!("{path}");
 "#,
             size = payload.size,
-            path = payload.path.display(),
+            path = rust_source_path(&payload.path),
         )
     } else {
         String::new()
     }
+}
+
+/// Converts a path to a forward-slash string for embedding in generated Rust source.
+///
+/// `#[path]` attributes and `include_bytes!` parse their argument as a Rust string literal. On
+/// Windows, `Path::display()` produces backslash separators, which would be interpreted as
+/// character escapes (e.g. `\O`, `\g`) and fail to compile the generated code.
+fn rust_source_path(path: &Path) -> String {
+    path.to_string_lossy().replace('\\', "/")
 }
